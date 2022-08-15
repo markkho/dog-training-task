@@ -1,0 +1,920 @@
+<html>
+<head>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+<script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+<script src ="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+<script src="./psyTaskFun-0.5.js"></script>
+<script src="./learners.js"></script>
+
+<script src="./actionsignalling_learner.js"></script>
+<script src="./policy_uniform.js"></script>
+<script src="./state_reward.js"></script>
+
+<style>
+#task {
+	margin-left:auto;
+	margin-right:auto;
+	text-align:center;
+	width:600px;
+}
+
+#task div {
+	margin-left:auto;
+	margin-right:auto;
+	text-align:center;
+}
+#garden {
+	width :501px;
+	height : 501px;
+	position :relative;
+}
+
+
+#questions {
+	margin-left:auto;
+	margin-right:auto;
+	text-align:center;
+	width:600px;
+}
+
+#controlpanel span {
+   border-top: 1px solid #96d1f8;
+   background: #65a9d7;
+   background: -webkit-gradient(linear, left top, left bottom, from(#3e779d), to(#65a9d7));
+   background: -webkit-linear-gradient(top, #3e779d, #65a9d7);
+   background: -moz-linear-gradient(top, #3e779d, #65a9d7);
+   background: -ms-linear-gradient(top, #3e779d, #65a9d7);
+   background: -o-linear-gradient(top, #3e779d, #65a9d7);
+   padding: 5px 10px;
+   -webkit-border-radius: 8px;
+   -moz-border-radius: 8px;
+   border-radius: 8px;
+   -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
+   -moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
+   box-shadow: rgba(0,0,0,1) 0 1px 0;
+   text-shadow: rgba(0,0,0,.4) 0 1px 0;
+   color: white;
+   font-size: 14px;
+   font-family: Georgia, serif;
+   text-decoration: none;
+   vertical-align: middle;
+   }
+#controlpanel span:hover {
+   border-top-color: #28597a;
+   background: #28597a;
+   color: #ccc;
+   }
+
+.mybutton {
+	text-align:center;
+	vertical-align:text-bottom;
+	background-color:#ffffff;
+	-moz-border-radius:6px;
+	-webkit-border-radius:6px;
+	border-radius:6px;
+	border:4px solid #000000;
+	display:inline-block;
+	color:#000000;
+	font-family:arial;
+	font-size:20px;
+	font-weight:bold;
+	/*width:150px;*/
+	padding: 0px 12px;
+}
+
+.mybutton:hover {
+	background-color:#b3b3b3;
+}
+.mybutton:active {
+	position:relative;
+	top:1px;
+}
+.unsel {
+	-webkit-user-select: none; /* Chrome/Safari */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
+
+	/* Rules below not implemented in browsers yet */
+	-o-user-select: none;
+	user-select: none;
+	cursor:default;
+}
+
+.feedbackbutton:hover {
+	background-color:#ffffff;
+	border:4px solid #0000CC ;
+}
+
+.feedbackbutton img {
+	width:80px;
+}
+
+</style>
+
+</head>
+
+<body>
+<div id='task'>
+	<div id='messages' style='font-size: 30px; background-color:black; color:white; border-color: red; border-style:solid; border-width:1px'>
+		Train the dogs!
+	</div>
+	<div id='garden'>
+		<div id='dog'>
+		</div>
+	</div>
+	<div id='nextButton' class='mybutton unsel'>
+		Start
+	</div>
+	<!--img  style="width: 100%;" src='./img/punishToReward.png'>
+	<div id='feedback'>
+	</div-->
+	<div style='font-family:arial; font-size:20px; font-weight:bold;' class= 'unsel'>
+		Punish &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Reward
+	</div>
+	<div id='feedbackbuttons'>
+		<span class='mybutton feedbackbutton' id='feedback_0'><img class='feedbackImg' src='./img/shock.png'></span>
+		<span class='mybutton feedbackbutton' id='feedback_1'><img class='feedbackImg' src='./img/baddog.png'></span>
+		<span class='mybutton feedbackbutton' id='feedback_2'><img class='feedbackImg' src='./img/nothing.png'></span>
+		<span class='mybutton feedbackbutton' id='feedback_3'><img class='feedbackImg' src='./img/gooddog.png'></span>
+		<span class='mybutton feedbackbutton' id='feedback_4'><img class='feedbackImg' src='./img/treat.png'></span>
+	</div>
+	<br>
+	<br>
+	<div id='controlpanel' class='unsel'>
+		<span id = 'autoplay'>autoplay</span>
+		<span id = 'fastDog'>fastDog</span>
+	</div>
+</div>
+
+<div id= 'questions'>
+	Please take a moment to reflect on today's training.<br>(You need to answer all questions before continuing)
+	<div id='question1'>
+		<div style='font-size: 30px'>How good was the dog at the task today?</div>
+		<img  style="width: 100%;" src='./img/badToGoodSlider.png'>
+		<div id='q1_slider' class='postEpSlider'></div>
+	</div>
+	<div id='question2'>
+		<br>
+		<br>
+		<br>
+		<hr>
+		<div style='font-size: 30px'>Compared to yesterday, how much did the dog improve or worsen?</div>
+		<img  style="width: 100%;" src='./img/alotToAlittleSlider.png'>
+		<div id='q2_slider' class='postEpSlider'></div>
+	</div>
+	<div id='question3'>
+		<br>
+		<br>
+		<br>
+		<hr>
+		<div style='font-size: 30px'>How effective do you think your training today was?</div>
+		<img  style="width: 100%;" src='./img/effectivenessSlider.png'>
+		<div id='q3_slider' class='postEpSlider'></div>
+	</div>
+	<div id="question4">
+		<br>
+		<br>
+		<br>
+		<hr>
+		<div style='font-size: 30px'>Is the dog ready to get to the house on its own?</div>
+    	<input type="radio" class='radio' id="yes" name="q4_button"><label for="radio1">Yes</label>
+    	<input type="radio" class='radio' id="no" name="q4_button"><label for="radio2">No</label>
+ 	</div>
+	<br>
+	<br>
+	<br>
+	<div id='postQuestionContinue' style='font-size:40; background-color:black; color:white' class='unsel'>
+		Continue
+	</div>
+</div>
+</body>
+
+<script>
+$j(function() {
+
+});
+
+var typicalTF = {
+	"-1,-1":{"%":0},
+	"0,0":{">":-1,"^":1},
+	"0,1":{">":-1,"^":1,"v":-1},
+	"0,2":{">":1,"v":-1},
+	"1,0":{">":-1,"<":1,"^":-1},
+	"1,1":{">":-1,"<":1,"^":1,"v":-1},
+	"1,2":{">":1,"<":-1,"v":-1},
+	"2,0":{"<":-1,"^":-1},
+	"2,1":{"<":-1,"^":1,"v":-1},
+	"2,2":{"%":0}};
+
+/*****************************************************
+*
+*  MDP Parameters
+*
+******************************************************/
+/*
+Task:
+# = avoid (-1)
+$ = goal (+1)
+o = walk on (0)
+
+2   o o $
+1   o # #
+0   o # #
+
+    0 1 2
+*/
+var mdp = mdp || {};
+mdp.gridWidth = 3;
+mdp.gridHeight = 3;
+mdp.actions = _.shuffle(['^', 'v', '>', '<', '%']);
+mdp.gridWorld = [['o', 'o', '$'],
+				 ['o', 'y', 'b'],
+				 ['o', 'n', 'p']];
+
+mdp.optimalPolicy = [['>', '>', 'x'],
+				 	 ['^', '^', '^'],
+				 	 ['^', '<', '^']];
+
+mdp.getStateType = function (x, y) {
+	return this.gridWorld[this.gridHeight-y-1][x]
+};
+
+mdp.getOptimalMove = function (x, y) {
+	return this.optimalPolicy[this.gridHeight-y-1][x]
+};
+
+mdp.isActionOptimal = function (state, action) {
+	if (typeof(state) == 'string') {
+		state = _.map(state.split(','), function(coor) {return parseInt(coor)});
+	}
+	if (action == this.getOptimalMove(state[0],state[1])) {
+		return 'optimal'
+	}
+	return 'suboptimal'
+};
+
+mdp.getAllStates = function () {
+	var allStates = [String([-1,-1])];
+	for (var x = 0; x < this.gridWidth; x++) {
+		for (var y = 0; y < this.gridHeight; y++) {
+			allStates.push(String([x,y]));
+		}
+	}
+	return allStates;
+}
+
+mdp.getNextState = function (state, action) {
+	if (typeof(state) == 'string') {
+		state = _.map(state.split(','), function(coor) {return parseInt(coor)});
+	}
+	if (action == '%') {
+		return String([-1,-1])
+	}
+
+	var x = state[0];
+	var y = state[1];
+
+	if (x == 2 && y == 2) {
+		return String([-1,-1])
+	}
+
+	var dx = 0;
+	var dy = 0;
+	if (action == "<") {dx--;}
+	if (action == ">") {dx++;}
+	if (action == "^") {dy++;}
+	if (action == "v") {dy--;}
+
+	return String([x+dx, y+dy])
+}
+
+mdp.getAvailableActions = function (state) {
+	if (typeof this.availableActions === 'undefined') {
+		this.availableActions = {};
+	}
+	if (typeof this.availableActions[state]  !== 'undefined') {
+		return this.availableActions[state]
+	}
+
+	if (typeof(state) == 'string') {
+		state = _.map(state.split(','), function(coor) {return parseInt(coor)});
+	}
+
+	var x = state[0];
+	var y = state[1];
+
+	if (x == 2 && y == 2) {
+		return ['%']
+	}
+	if (x == -1 && y == -1) {
+		return ['%']
+	}
+
+	var availActions = [];
+	for (var a = 0; a < this.actions.length; a++) {
+		if (x == 0 && this.actions[a] == "<") {
+			continue;
+		}
+		if (x == 2 && this.actions[a] == ">") {
+			continue;
+		}
+		if (y == 0 && this.actions[a] == "v") {
+			continue;
+		}
+		if (y == 2 && this.actions[a] == "^") {
+			continue;
+		}
+		if (this.actions[a] == '%') {
+			continue;
+		}
+		availActions.push(this.actions[a]);
+	}
+	mdp.availableActions[state] = availActions
+	return availActions
+}
+
+mdp.stringToPolicy = function(stateOrder, policyString) {
+	var policy = {};
+	for (var s = 0; s < stateOrder.length; s++) {
+		var state = stateOrder[s];
+		policy[state] = policyString.charAt(s);
+	}
+	return policy
+}
+
+
+
+/*****************************************************
+*
+*
+*
+*
+*
+*
+*
+*
+*  Task
+*
+*
+*
+*
+*
+*
+*
+*
+*
+*
+******************************************************/
+var workerID = "";
+var taskStart = +new Date;
+// var MY_POST_URL = "this would be some server-side script to handle saving data";
+
+/********************************
+*
+*     Set up Task Visually
+*
+*********************************/
+var loadGridPictures = function () {
+	for (var i = 0; i < mdp.gridWidth; i++) {
+		$j( "#garden").prepend('<div></div>');
+		var row = $j("#garden div").first();
+		for (var j = 0; j < mdp.gridHeight; j++) {
+			var stateType = mdp.getStateType(j, i);
+			var pic = "";
+			if (stateType == 'o') {
+				pic = 'sidewalk.png';
+			}
+			if (stateType == 'y') {
+				pic = 'yellowflowers.png';
+			}
+			if (stateType == 'b') {
+				pic = 'blueflowers.png';
+			}
+			if (stateType == 'n') {
+				pic = 'orangeflowers.png';
+			}
+			if (stateType == 'p') {
+				pic = 'pinkflowers.png';
+			}
+
+
+			if (stateType == '$') {
+				row.append("<img id='home' class='gardentile' src='./img/house.png'>");
+			}
+			else {
+				row.append("<img class='gardentile' src='./img/"+pic+"'>");
+			}
+		}
+	}
+	var tilePixels = Math.round(500/mdp.gridWidth);
+	$j('.gardentile').css('width', tilePixels+'px');
+	$j('.gardentile').css('height', tilePixels+'px');
+
+}
+
+//
+// Dog movements
+var imgWidth = Math.floor(500/mdp.gridWidth);
+var dogBasex = 0;
+var dogBasey = 0;
+$j('#dog').css('width', imgWidth+'px');
+$j('#dog').css('height', imgWidth+'px');
+$j('#dog').css('background-image', 'url(./img/dogSpriteSheet.png)');
+$j('#dog').css('background-size', (12*imgWidth)+'px '+(8*imgWidth)+'px');
+$j('#dog').css('position', 'absolute');
+$j('#dog').css('top', '0px');
+var walkingDog = null;
+var dog = $j('#dog');
+var dogWalkDirNum = -1;
+var dogWalkRate = 200;
+var dogWalkTime = 2000;
+var dogLookTime = 3000;
+var timeBetweenTrials = 1000;
+
+var showDogMove = function (dogMove) {
+	//get dog color
+	dogBasex = (dogMove.color % 4)*imgWidth*3;
+	dogBasey = Math.floor(dogMove.color/2)*imgWidth*4;
+
+	//teleport dog to new location only if its the beginning of an episode
+	if (dogMove.episodetrial == 0) {
+		moveDog(dogMove.x, dogMove.y, null, 0);
+		dog.css('backgroundPosition', '-'+(dogBasex+(imgWidth*1))+'px -'+(dogBasey+(imgWidth*0+5))+'px');
+	}
+
+	dogWalkDirNum = -1;
+
+	if (dogMove.action == '^') {
+		dogWalkDirNum = 3;
+	}
+	else if (dogMove.action == 'v') {
+		dogWalkDirNum = 0;
+	}
+	else if (dogMove.action == '>') {
+		dogWalkDirNum = 2;
+	}
+	else if (dogMove.action == '<') {
+		dogWalkDirNum = 1;
+	}
+	setTimeout(function() {
+		//tween the dog's location
+		moveDog(dogMove.x, dogMove.y, dogMove.action, dogWalkTime);
+		walkDog();
+		setTimeout(function() {
+			stopDog();
+		}, dogWalkTime);
+	}, dogLookTime);
+}
+
+var moveDog = function (x0, y0, direction, moveTime) {
+	var y1 = y0;
+	var x1 = x0;
+	if (direction == '>') {
+		x1 = x0+1;
+	}
+	if (direction == '<') {
+		x1 = x0-1;
+	}
+	if (direction == 'v') {
+		y1 = y0-1;
+	}
+	if (direction == '^') {
+		y1 = y0+1;
+	}
+
+	var imgX0 = Math.floor(x0*(500/mdp.gridWidth));
+	var imgX1 = Math.floor(x1*(500/mdp.gridWidth));
+	var imgY0 = Math.floor((mdp.gridHeight - y0 - 1)*(500/mdp.gridHeight));
+	var imgY1 = Math.floor((mdp.gridHeight - y1 - 1)*(500/mdp.gridHeight));
+
+	dog.css('top', imgY0+'px');
+	dog.css('left', imgX0+'px');
+	dog.animate({'top' : imgY1+'px', 'left': imgX1+'px'}, moveTime);
+
+}
+
+var walkDog = function() {
+	dog.css('backgroundPosition', '-'+(dogBasex+(imgWidth*0))+'px -'+(dogBasey+(imgWidth*dogWalkDirNum+5))+'px');
+	walkingDog = setTimeout(function () {
+		dog.css('backgroundPosition', '-'+(dogBasex+(imgWidth*2))+'px -'+(dogBasey+(imgWidth*dogWalkDirNum+5))+'px');
+		walkingDog = setTimeout(function() {
+			walkDog();
+		}, dogWalkRate);
+	}, dogWalkRate);
+}
+
+var stopDog = function() {
+	dog.css('backgroundPosition', '-'+(dogBasex+(imgWidth*1))+'px -'+(dogBasey+(imgWidth*dogWalkDirNum+5))+'px');
+	clearTimeout(walkingDog);
+}
+
+/********************************
+*
+*     Interaction with Task
+*     Saving data
+*
+*********************************/
+
+//enable slider
+//trial load, record time
+//on click, record time
+//on stop, record time, record value, send stuff
+
+var respData = {};
+var allResponses = [];
+var startNextTrial = function () {
+	$j('#dog').show();
+	console.log('loading next trial');
+	$j('#messages').text('Watch what the dog does');
+
+	//have the learner do something
+	var dogMove = {
+		color: dogColor,
+		episodetrial: curEpisodeTrial,
+		x: curState[0],
+		y: curState[1],
+		action:mylearner.getAction(curState)
+	};
+
+	respData.totaltrialnum = totalTrialNum
+	respData.episode = curEpisode;
+	respData.episodetrial = dogMove.episodetrial;
+	respData.starttime = (+new Date) - taskStart;
+	respData.x = dogMove.x;
+	respData.y = dogMove.y;
+	respData.action = dogMove.action; //get an action; may be stochastic
+	respData.optimal = mdp.isActionOptimal(String([dogMove.x, dogMove.y]), dogMove.action);
+	respData.learner = JSON.stringify(mylearner.getInfo());
+	respData.color = dogMove.color;
+	respData.workerID = workerID;
+	respData.nclicks = 0;
+
+	showDogMove(dogMove);
+	setTimeout(function () {
+		$j('#messages').text('How will you respond? (Day '+ (respData.episode+1)+' of ' + maxEpisodes + ')');
+		$j('.feedbackbutton').on('click', feedbackbuttonFunction);
+
+	}, dogWalkTime+dogLookTime+100);
+
+
+}
+
+//functions for response buttons
+var feedbackbuttonFunction = function () {
+	//record response
+	respData.responsetime = (+new Date) - taskStart;
+	var fid = $j(this).attr('id');
+	respData.response = parseInt(fid.substr(fid.length -1)) - 2;
+	respData.nclicks++;
+
+	//set color of button
+	$j('.feedbackbutton').css('border', '4px solid #000000');
+	$j(this).css('border', '4px solid #0000CC');
+
+	//reset next button
+	$j('#nextButton').unbind();
+	$j('#nextButton').click(nextButtonFunc);
+	$j("#nextButton").text("Next");
+	$j('#messages').text('Click "Next" to continue');
+}
+
+//functionality for next button
+var nextButtonFunc = function () {
+	//update learner
+	mylearner.processResponse(curState, respData.action, respData.response);
+
+	$j('.feedbackbutton').off('click');
+	$j('.feedbackbutton').css('border', '4px solid #000000');
+
+	$j('#nextButton').unbind();
+	$j("#nextButton").text("----");
+
+	//submit trial data
+	// $j.post(MY_POST_URL,
+	// 		{data:respData}, function(r) {console.log(r);});
+	console.log(respData);
+
+	//update trial numbers/episode stuff
+	var nextState = mdp.getNextState(curState, respData.action);
+	nextState = _.map(nextState.split(','), function(coor) {return parseInt(coor)});
+	totalTrialNum++;
+	curEpisodeTrial++;
+	if (curEpisodeTrial == maxEpisodeLength || _.isEqual(nextState, [2,2])) {
+		curEpisodeTrial = 0;
+		curEpisode++;
+	}
+
+	//if last trial of entire experiment
+	if (curEpisode >= maxEpisodes) {
+		//end
+		$j('#messages').text('Done for today! Click "Continue"');
+		$j('#dog').hide();
+		$j('#nextButton').text('Continue');
+		$j('#nextButton').click(function () {
+
+			postEpisodeQuestions(false);
+			$j('#nextButton').unbind();
+		});
+	}
+	//if this is the first trial of a new episode
+	else if (curEpisodeTrial == 0) {
+		curState = [0,0]; //reset dog to beginning
+
+		allResponses.push(respData);
+		$j('#messages').text('Done for today! Click "Continue"');
+		$j('#dog').hide();
+		$j('#nextButton').text('Continue');
+		$j('#nextButton').click(function () {
+			postEpisodeQuestions(true);
+			$j('#nextButton').unbind();
+		});
+	}
+	//within episode trial loading
+	else {
+		//set the next state of the dog
+		curState = nextState;
+
+		allResponses.push(respData);
+		respData = {};
+		setTimeout(function () {
+			totalTrialNum++;
+			startNextTrial();
+		}, timeBetweenTrials);
+	}
+}
+
+var endExperiment = function () {
+	$j('#messages').text("Done with training. Click on 'Continue'.");
+	$j(window).unbind('beforeunload', closeAlert);
+	$j("#dog").hide();
+
+	$j('#nextButton').on('click', function () {
+		// saveDogToServer(mylearner, function () {
+		// 		window.location.replace("www.google.com");
+			//$j('#messages').text("Please close this window and return to the survey.");
+		});
+
+	});
+}
+
+
+var postEpResponses = {};
+var q1answered = false;
+var q2answered = false;
+var q3answered = false;
+var q4answered = false;
+$j('#q1_slider').on('slidestop', function (event, ui) {
+	postEpResponses.ability = $j('#q1_slider').slider('value');
+	q1answered = true;
+});
+$j('#q2_slider').on('slidestop', function (event, ui) {
+	postEpResponses.improvement = $j('#q2_slider').slider('value');
+	q2answered = true;
+});
+$j('#q3_slider').on('slidestop', function (event, ui) {
+	postEpResponses.effectiveness = $j('#q3_slider').slider('value');
+	q3answered = true;
+});
+$j('#question4 input').change(function () {
+	postEpResponses.learned = $j(this).attr('id');
+	q4answered = true;
+});
+
+var postEpisodeQuestions = function (moreTrials) {
+	var onContinue;
+	//last episode just completed
+	if (!moreTrials) {
+		onContinue = function () {endExperiment();}
+	}
+	//load next episode
+	else {
+		onContinue = function () {
+			respData = {};
+			totalTrialNum++;
+			startNewEpisode();
+		}
+	}
+
+	//questions to ask between episodes
+	$j('#task').hide();
+	$j('#questions').show();
+	q1answered = false;
+	q2answered = false;
+	q3answered = false;
+	q4answered = false;
+
+	postEpResponses.episode = respData.episode;
+	postEpResponses.workerid = workerID;
+	postEpResponses.time = +new Date;
+
+	//if its the first episode can't ask 2nd question
+	if (postEpResponses.episode == 0) {
+		$j('#q2_slider').trigger('slidestop');
+		$j('#question2').hide();
+	}
+
+	$j('#postQuestionContinue').click(function () {
+		//if the questions haven't been answered, do nothing
+		if (_.some([!q1answered, !q2answered, !q3answered, !q4answered])) {
+			return
+		}
+		//go to next episode and post data
+		$j('#task').show();
+		$j('#question2').show();
+		$j('#questions').hide();
+		// $j.post(MY_POST_URL,
+		// 	{data:postEpResponses}, function(r) {console.log(r);});
+		console.log(postEpResponses);
+		onContinue();
+
+		//reset questions
+		postEpResponses = {};
+		$j('.postEpSlider').slider({value:50});
+		$j('#postQuestionContinue').unbind();
+		$j('input[name=q4_button]').attr('checked', false);
+	});
+}
+
+var startNewEpisode = function () {
+	//on the first trial of each episode; indicate that its a new episode
+	$j('#messages').text('Click "Continue" to start the next day of training!');
+	$j('#nextButton').text('Continue');
+	$j("#dog").hide();
+
+	//need to reset eligibility trace if it has one
+	if (learnerType == 'qet') {
+		mylearner.resetEligibilityTraces();
+	}
+
+	$j('#nextButton').on('click', function () {
+		$j('#nextButton').text('----');
+		startNextTrial();
+		$j('#nextButton').unbind();
+	});
+}
+
+var saveDogToServer = function (dog, callback) {
+	var toSave = {dog:JSON.stringify(dog), workerid:workerID};
+	callback();
+	// $j.post(MY_POST_URL,
+	// 		{data:toSave}, function(r) {
+	// 			console.log(r);
+	// 			callback();
+	// 		});
+}
+
+/********************************
+*
+*     Control Panel Functions
+*     - autoplay
+*     - back
+*     - activate
+*
+*********************************/
+//autoplay
+$j('#autoplay').on('click', function () {
+	autoSlide = !autoSlide;
+});
+$j('#fastDog').on('click', function () {
+	setDogSpeed(.2);
+})
+
+
+//start experiment
+var images = ['blueflowers.png',
+			  'catSpriteSheet.png',
+			  'dogSpriteSheet.png',
+			  'horseSpriteSheet.png',
+			  'house.png',
+			  'orangeflowers.png',
+			  'pinkflowers.png',
+			  'punishToReward.png',
+			  'sidewalk.png',
+			  'yellowflowers.png'];
+for (var i = 0; i < images.length; i++) {
+	psyFun.preloadImage('./img/'+images[i]);
+}
+
+var setDogSpeed = function (multiplier) {
+	dogWalkRate = 200*multiplier;
+	dogWalkTime = 2000*multiplier;
+	dogLookTime = 3000*multiplier;
+};
+
+var closeAlert = null;
+var dogSpeed = .75;
+var autoSlide = false;
+var controlpanel = false;
+var learnerType = "";
+var mylearner;
+var dogColor = 4;
+var maxEpisodeLength = 10;
+var maxEpisodes = 10;
+
+var rerouteAfterCompletion = true;
+
+//variables that change over task
+var totalTrialNum = 0;
+var curEpisode = 0;
+var curEpisodeTrial = 0;
+var curState;
+
+$j(function() {
+	//initializing random stuff
+	$j('#dog').hide();
+	$j('#questions').hide();
+	if (psyFun.getURLParam('dogSpeed') != "") {
+		dogSpeed = parseFloat(psyFun.getURLParam('dogSpeed'));
+	}
+	workerID = psyFun.getURLParam('workerID');
+	rerouteAfterCompletion = psyFun.getURLParam('reroute') === 'true';
+
+	//alerting people to not close the window
+	closeAlert = function(){
+		return 'Please do not close or reload this window before completing the task. Doing so will invalidate your responses!';
+	};
+	$j(window).bind('beforeunload', closeAlert);
+
+	//control panel
+	showControlPanel = (psyFun.getURLParam('controlpanel') == '' ? false : true);
+	if (showControlPanel) {
+		$j('#controlpanel').show();
+	}
+	else {
+		$j('#controlpanel').hide();
+	}
+
+	//loading visuals and interaction
+	loadGridPictures();
+	$j('#messages').text('Click "Start" to begin!');
+
+	//initialize post episode question stuff
+	$j( "#q1_slider" ).slider({animate:'fast', max:100, min:0, step:1, value:50});
+	$j( "#q2_slider" ).slider({animate:'fast', max:100, min:0, step:1, value:50});
+	$j( "#q3_slider" ).slider({animate:'fast', max:100, min:0, step:1, value:50});
+	$j( "#q4_button" ).buttonset();
+
+
+	//initalize start button
+	$j('#nextButton').click(function () {
+		$j('#messages').text('Train the dog!');
+		setDogSpeed(dogSpeed);
+		$j('#dog').hide();
+		$j('#nextButton').unbind();
+		$j("#nextButton").text("----");
+		setTimeout(function() {
+			startNextTrial();
+		}, dogWalkTime+dogLookTime+100);
+
+	});
+
+
+	//load learner
+	curState = [0,0];
+	learnerType = psyFun.getURLParam('type')
+	var discountFactor = parseFloat(psyFun.getURLParam('df'));
+	if (_.isNaN(discountFactor)) { discountFactor = .95;}
+
+	var learningRate = parseFloat(psyFun.getURLParam('lr'));
+	if (_.isNaN(learningRate)) { learningRate = 1.0;}
+
+	var randomChoose = parseFloat(psyFun.getURLParam('rc'));
+	if (_.isNaN(randomChoose)) { randomChoose = .2;}
+
+	var temperature = parseFloat(psyFun.getURLParam('temp'));
+	if (_.isNaN(temperature)) { temperature = 1;}
+
+	var initVal = parseFloat(psyFun.getURLParam('iv'));
+	if (_.isNaN(initVal)) { initVal =  0.0;}
+
+	var traceDecay = parseFloat(psyFun.getURLParam('td'));
+	if (_.isNaN(traceDecay)) { traceDecay =  0.0;}
+
+	var actionSelectionRule = psyFun.getURLParam('arule');
+	if (actionSelectionRule == "") { actionSelectionRule =  'e';}
+
+	if (learnerType == 'q') {
+		mylearner = new Qlearner(mdp, discountFactor, learningRate, randomChoose, initVal, temperature, actionSelectionRule);
+	}
+	else if (learnerType == 'qet') {
+		mylearner = new Qlearner_w_EligibilityTrace(mdp, discountFactor, learningRate, randomChoose, initVal, temperature,actionSelectionRule, traceDecay);
+	}
+	else if (learnerType == 'mb') {
+		mylearner = new ModelBasedLearner(mdp, discountFactor, learningRate, randomChoose, initVal);
+		mylearner.calcOptimalPolicy(100);
+	}
+	else if (learnerType == 'as_u') { //action signalling
+		mylearner = new ActionSignallingLearner(mdp, learningRate, randomChoose, policy_uniform['policies'], policy_uniform['policy_probs']);
+	}
+	else if (learnerType == 'as_s') { //action signalling
+		mylearner = new ActionSignallingLearner(mdp, learningRate, randomChoose, state_reward['policies'], state_reward['policy_probs']);
+	}
+	else {
+		mylearner = new Qlearner(mdp, .99, .1, .1, 1, 0.0, 'e');
+	}
+});
+
+</script>
+
+</html>
