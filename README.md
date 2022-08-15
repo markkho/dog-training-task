@@ -2,7 +2,7 @@
 
 The experiment can be run by opening the `task.html` file in the browser. Different paramterizations can be run by adding URL arguments, e.g.:
 ```
-.../task.html&type=q
+.../task.html?type=as_u&rc=.1
 ```
 
 The options for learning algorithms are:
